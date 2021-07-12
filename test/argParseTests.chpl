@@ -2,6 +2,7 @@ use UnitTest;
 use ArgParse;
 use List;
 
+//test that when a single int value is passed, a single value is stored
 proc testSingleIntArg(test: borrowed Test) throws {
   var argList = ["progName","-i","20"];
   var parser = new argumentParser();
@@ -14,13 +15,18 @@ proc testSingleIntArg(test: borrowed Test) throws {
 				    defaultValue=defaultVal,
 				    help="An integer value to pass as argument");
   
-  test.assertFalse(myIntArg.hasValue());
-
-  parser.parseArgs(argList[1..]);
+  //make sure default value was assigned
   test.assertTrue(myIntArg.hasValue());
+  //parse the options
+  parser.parseArgs(argList[1..]);
+  //make sure we still have a value
+  test.assertTrue(myIntArg.hasValue());
+  //ensure the value passed is correct, and correct type
   test.assertEqual(myIntArg.getValue(),20);
 }
 
+//test that when an int option is specified multiple times
+//that the final value is stored
 proc testIntArgMultipleLastAssigned(test: borrowed Test) throws {
   var argList = ["progName","-i","20","-i","30","-i","40"];
   var parser = new argumentParser();
@@ -31,13 +37,16 @@ proc testIntArgMultipleLastAssigned(test: borrowed Test) throws {
 				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
-  test.assertFalse(myIntArg.hasValue());
+  //make sure default value assigned
+  test.assertTrue(myIntArg.hasValue());
 
   parser.parseArgs(argList[1..]);
   test.assertTrue(myIntArg.hasValue());
   test.assertEqual(myIntArg.getValue(),40);
 }
 
+//test that mixing short and long option strings multiple times
+//stores the final value
 proc testIntArgShortLongLastAssigned(test: borrowed Test) throws {
   var argList = ["progName","-i","20","--intVal","30","--intVal","40"];
   var parser = new argumentParser();
@@ -48,13 +57,14 @@ proc testIntArgShortLongLastAssigned(test: borrowed Test) throws {
 				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
-  test.assertFalse(myIntArg.hasValue());
+  test.assertTrue(myIntArg.hasValue());
 
   parser.parseArgs(argList[1..]);
   test.assertTrue(myIntArg.hasValue());
   test.assertEqual(myIntArg.getValue(),40);
 }
 
+//test that int types don't allow alphanumeric values
 proc testIntBadArgumentAlphaNum(test: borrowed Test) throws {
   var argList = ["progName","-i","20A"];
   var parser = new argumentParser();
@@ -65,7 +75,7 @@ proc testIntBadArgumentAlphaNum(test: borrowed Test) throws {
 				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
-  test.assertFalse(myIntArg.hasValue());
+  test.assertTrue(myIntArg.hasValue());
   try {
     parser.parseArgs(argList[1..]);
   } catch ex : ArgumentError {
@@ -73,35 +83,28 @@ proc testIntBadArgumentAlphaNum(test: borrowed Test) throws {
       return;  
   }
   test.assertTrue(false);
-  // test.assertThrows(parser.parseArgs(argList[1..]), ArgumentError);
 }
-
+ 
+//test that int types don't allow alpha values
 proc testIntBadArgumentAlpha(test: borrowed Test) throws {
   var argList = ["progName","-i","A"];
   var parser = new argumentParser();
   var myIntArg = parser.addArgument(eltType=int,
 				    name="IntArg1",
 				    opts=["-i","--intVal"],
+            numArgs=1,
 				    required=true,
-				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
+  //make sure no default value assigned, as we didn't provide one
   test.assertFalse(myIntArg.hasValue());
-  // test.assertThrows(parser.parseArgs(argList[1..]), ArgumentError);
-}
-
-proc test2(test: borrowed Test) throws {
-  //var argList = ["progName","--flag1","flag1Val1","flag1Val2","-s","shortOpt1"];
-  //var parser = new argumentParser();
-  //var result = parser.parseArgs(argList);
-  //test.assertEqual(argList, result);
-}
-
-proc test3(test: borrowed Test) throws {
-  //var argList = new list(["progName","--flag1","flag1Val1","flag1Val2","-s","shortOpt1"]);
-  //var parser = new argumentParser();
-  //var result = parser.parseArgs(argList);
-  //test.assertEqual(argList, result);
+  try {
+    parser.parseArgs(argList[1..]);
+  } catch ex : ArgumentError {
+      test.assertTrue(true);
+      return;  
+  }
+  test.assertTrue(false);  
 }
 
 UnitTest.main();

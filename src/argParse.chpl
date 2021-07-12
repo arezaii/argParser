@@ -37,7 +37,7 @@ class Argument {
     // return values:list(eltType);
   }
   proc hasValue(){
-    return this.present && !this.values.isEmpty();
+    return !this.values.isEmpty();
   }
 }
 
@@ -136,11 +136,12 @@ class Argument {
         pos += 1;
         argContainer.values.clear();
         while pos < argsD.high && !arguments[pos].startsWith("-") {
-          /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-          /*   this.unknownArgs.append(arguments[pos]); */
-          /*   pos+=1; */
-          /*   continue; */
-          /* } */
+          if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+             this.unknownArgs.append(arguments[pos]); 
+             pos+=1; 
+             j+=1; 
+             continue; 
+          }
           argContainer.values.append(arguments[pos]);
           argContainer.present=true;
           pos += 1;
@@ -175,12 +176,12 @@ class Argument {
       var j = 0;
       writeln("Begin parsing " + argAction.name);
       while j <= argAction.numArgs.low && !arguments[pos].startsWith("-") {
-        /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-        /*   this.unknownArgs.append(arguments[pos]); */
-        /*   pos+=1; */
-        /*   j+=1; */
-        /*   continue; */
-        /* } */
+        if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+             this.unknownArgs.append(arguments[pos]); 
+             pos+=1; 
+             j+=1; 
+             continue; 
+        }
         argContainer.values[0]=arguments[pos];
         argContainer.present=true;
         j += 1;
@@ -189,12 +190,12 @@ class Argument {
       if j == argAction.numArgs.low then {
         //check if there are remaining arguments to add, up to numArgs.high, or we hit another flag
         while j <= argAction.numArgs.high && !arguments[pos].startsWith("-") {
-        /*   if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-        /*   this.unknownArgs.append(arguments[pos]); */
-        /*   pos+=1; */
-        /*   j+=1; */
-        /*   continue; */
-        /* } */
+        if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+             this.unknownArgs.append(arguments[pos]); 
+             pos+=1; 
+             j+=1; 
+             continue; 
+        }
           argContainer.values[0]=arguments[pos];
           argContainer.present=true;
           j += 1;
@@ -215,9 +216,9 @@ class Argument {
     /*   pos+=1; */
     /* } */
         }else{
-    writeln("Unknown Argument found at pos " + pos:string+ " " + arguments[pos]);
-    this.unknownArgs.append(arguments[pos]);
-    pos +=1;
+          writeln("Unknown Argument found at pos " + pos:string+ " " + arguments[pos]);
+          this.unknownArgs.append(arguments[pos]);
+          pos +=1;
         }
       
     }
@@ -242,7 +243,7 @@ class Argument {
   }
 
   proc addArgument(type eltType,
-		   name:string,
+		               name:string,
                    opts:[] string,
                    numArgs:int = 1,
                    defaultValue:eltType,
@@ -254,18 +255,17 @@ class Argument {
 		   }
    
    proc addArgument(type eltType,
-		    name:string,
-		    opts:[] string,
-		    numArgs:range,
-		    defaultValue:[] eltType,
-		    required:bool = false,
-		    help:string="") throws {
+                    name:string,
+                    opts:[] string,
+                    numArgs:range,
+                    defaultValue:[] eltType,
+                    required:bool = false,
+                    help:string="") throws {
      compilerAssert(numArgs.hasLowBound(), "numArgs must have a lower bound");
      var act = new Action(name=name, numOpts=opts.size,opts= opts,
 					numArgs=numArgs, required=required,
 					help=help,
-					numDefaults=defaultValue.size);
-     //for val in defaultValue do act.defaultValue.append(val:string);
+					numDefaults=defaultValue.size);     
      return addArgument(act, eltType);   
    }
 
@@ -283,7 +283,19 @@ class Argument {
      return arg;
    }
        
-  
+  proc addArgument(type eltType, 
+                   name:string,
+                   opts:[]string, 
+                   numArgs:int,
+                   required=false,
+                   help:string="") throws{
+                      var act = new Action(name=name, numOpts=opts.size,
+                      opts=opts, numArgs=numArgs-1..numArgs-1, required=required,
+                      help=help);
+                    return addArgument(act, eltType);
+                    }
+
+
   proc addArgument(type eltType,
 		   name:string,
                    opts:[] string,
@@ -297,8 +309,7 @@ class Argument {
 						     opts= opts, numArgs=numArgs-1..numArgs-1,
 						     required=required,help=help,
 						     
-						     numDefaults=defaultValue.size);
-		     //for val in defaultValue do act.defaultValue.append(val:string);
+						     numDefaults=defaultValue.size);		    
 		     return addArgument(act, eltType);
 		   }
   
