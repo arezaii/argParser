@@ -37,7 +37,7 @@ class Argument {
     // return values:list(eltType);
   }
   proc hasValue(){
-    return !this.values.isEmpty() && this.present;
+    return this.present && !this.values.isEmpty();
   }
 }
 
@@ -119,106 +119,106 @@ class Argument {
     if pos == argsD.high then return;
     while pos <= argsD.high {
       if arguments[pos].startsWith("-") then {
-	writeln("found entry " + arguments[pos]);
-	if !options.contains(arguments[pos]) then {
-	  //should check positional arguments list when we have one
-	  this.unknownArgs.append(arguments[pos]);
-	  pos+=1;
-	  continue;
-	}
-	// an argument we have an opt flag for!
-	// get the name, use that to get the action
-	var argName = options.getValue(arguments[pos]);
-	var argAction = actions.getBorrowed(argName);
-	var argContainer = this.result.getBorrowed(argName);
-	var j = 0;
-	if !argAction.numArgs.hasHighBound() then {
-	  pos += 1;
-	  argContainer.values.clear();
-	  while pos < argsD.high && !arguments[pos].startsWith("-") {
-	    /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-	    /*   this.unknownArgs.append(arguments[pos]); */
-	    /*   pos+=1; */
-	    /*   continue; */
-	    /* } */
-	    argContainer.values.append(arguments[pos]);
-	    argContainer.present=true;
-	    pos += 1;
-       	    writeln("position updated to: " + pos:string);
-	  }
-	}else if argAction.numArgs.low == argAction.numArgs.high then {
-	  writeln("Begin parsing " + argAction.name);
-	  var j = 0;
-	  pos += 1;
-	  argContainer.values.clear();
-	  while j <= argAction.numArgs.high && pos <= argsD.high {
-	    if arguments[pos].startsWith("-") then
-	      //expected argAction.numArgs but only got j argument values
-	      this.missingArgs.append(argAction.name);
-	    /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-	    /*   this.unknownArgs.append(arguments[pos]); */
-	    /*   pos+=1; */
-	    /*   j+=1; */
-	    /*   continue; */
-	    /* } */
-	    this.result.getBorrowed(argName).values.append(arguments[pos]);
-	    this.result.getBorrowed(argName).present=true;
-  	    j += 1;
-	    pos += 1;
-       	    writeln("position updated to: " + pos:string);
-	  }
-	  if j < argAction.numArgs.high then
-	    //expected argAction.numArgs but only got j argument values
-	    this.missingArgs.append(argAction.name);
-	}else if argAction.numArgs.low < argAction.numArgs.high then {
-	  pos += 1;
-	  var j = 0;
-	  writeln("Begin parsing " + argAction.name);
-	  while j <= argAction.numArgs.low && !arguments[pos].startsWith("-") {
-	    /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-	    /*   this.unknownArgs.append(arguments[pos]); */
-	    /*   pos+=1; */
-	    /*   j+=1; */
-	    /*   continue; */
-	    /* } */
-	    argContainer.values[0]=arguments[pos];
-	    argContainer.present=true;
-	    j += 1;
-	    pos += 1;
-	  }
-	  if j == argAction.numArgs.low then {
-	    //check if there are remaining arguments to add, up to numArgs.high, or we hit another flag
-	    while j <= argAction.numArgs.high && !arguments[pos].startsWith("-") {
-	    /*   if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
-	    /*   this.unknownArgs.append(arguments[pos]); */
-	    /*   pos+=1; */
-	    /*   j+=1; */
-	    /*   continue; */
-	    /* } */
-	      argContainer.values[0]=arguments[pos];
-	      argContainer.present=true;
-	      j += 1;
-	      pos += 1;
-	    }
-	  }else{
-	    this.missingArgs.append(argAction.name);
-	  }
-	  //this.result.getBorrowed(argName).values[0]=arguments[pos];
-	  //this.result.getBorrowed(argName).present=true;
-	  //pos += 1;
-          writeln("position updated to: " + pos:string);
-	}
-	/* else if argAction.numArgs == 0 then { */
-	/*   writeln("Begin parsing " + argAction.name); */
-	/*   this.result.getBorrowed(argName).values[0]="true"; */
-	/*   this.result.getBorrowed(argName).present=true; */
-	/*   pos+=1; */
-	/* } */
-      }else{
-	writeln("Unknown Argument found at pos " + pos:string+ " " + arguments[pos]);
-	this.unknownArgs.append(arguments[pos]);
-	pos +=1;
+		    writeln("found entry " + arguments[pos]);
+        if !options.contains(arguments[pos]) then {
+          //should check positional arguments list when we have one
+          this.unknownArgs.append(arguments[pos]);
+          pos+=1;
+          continue;
+		    }
+      // an argument we have an opt flag for!
+      // get the name, use that to get the action
+      var argName = options.getValue(arguments[pos]);
+      var argAction = actions.getBorrowed(argName);
+      var argContainer = this.result.getBorrowed(argName);
+      var j = 0;
+      if !argAction.numArgs.hasHighBound() then {
+        pos += 1;
+        argContainer.values.clear();
+        while pos < argsD.high && !arguments[pos].startsWith("-") {
+          /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
+          /*   this.unknownArgs.append(arguments[pos]); */
+          /*   pos+=1; */
+          /*   continue; */
+          /* } */
+          argContainer.values.append(arguments[pos]);
+          argContainer.present=true;
+          pos += 1;
+                writeln("position updated to: " + pos:string);
+        }
+      }else if argAction.numArgs.low == argAction.numArgs.high then {
+        writeln("Begin parsing " + argAction.name);
+        var j = 0;
+        pos += 1;
+        argContainer.values.clear();
+        while j <= argAction.numArgs.high && pos <= argsD.high {
+          if arguments[pos].startsWith("-") then
+            //expected argAction.numArgs but only got j argument values
+            this.missingArgs.append(argAction.name);
+          if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+             this.unknownArgs.append(arguments[pos]); 
+             pos+=1; 
+             j+=1; 
+             continue; 
+          }
+            argContainer.values.append(arguments[pos]);
+            argContainer.present=true;
+            j += 1;
+            pos += 1;
+                writeln("position updated to: " + pos:string);
+        }
+        if j < argAction.numArgs.high then
+          //expected argAction.numArgs but only got j argument values
+          this.missingArgs.append(argAction.name);
+    }else if argAction.numArgs.low < argAction.numArgs.high then {
+      pos += 1;
+      var j = 0;
+      writeln("Begin parsing " + argAction.name);
+      while j <= argAction.numArgs.low && !arguments[pos].startsWith("-") {
+        /* if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
+        /*   this.unknownArgs.append(arguments[pos]); */
+        /*   pos+=1; */
+        /*   j+=1; */
+        /*   continue; */
+        /* } */
+        argContainer.values[0]=arguments[pos];
+        argContainer.present=true;
+        j += 1;
+        pos += 1;
       }
+      if j == argAction.numArgs.low then {
+        //check if there are remaining arguments to add, up to numArgs.high, or we hit another flag
+        while j <= argAction.numArgs.high && !arguments[pos].startsWith("-") {
+        /*   if argContainer.getEltType().startsWith("int") && !isInt(arguments[pos]){ */
+        /*   this.unknownArgs.append(arguments[pos]); */
+        /*   pos+=1; */
+        /*   j+=1; */
+        /*   continue; */
+        /* } */
+          argContainer.values[0]=arguments[pos];
+          argContainer.present=true;
+          j += 1;
+          pos += 1;
+        }
+      }else{
+        this.missingArgs.append(argAction.name);
+      }
+      //this.result.getBorrowed(argName).values[0]=arguments[pos];
+      //this.result.getBorrowed(argName).present=true;
+      //pos += 1;
+            writeln("position updated to: " + pos:string);
+    }
+    /* else if argAction.numArgs == 0 then { */
+    /*   writeln("Begin parsing " + argAction.name); */
+    /*   this.result.getBorrowed(argName).values[0]="true"; */
+    /*   this.result.getBorrowed(argName).present=true; */
+    /*   pos+=1; */
+    /* } */
+        }else{
+    writeln("Unknown Argument found at pos " + pos:string+ " " + arguments[pos]);
+    this.unknownArgs.append(arguments[pos]);
+    pos +=1;
+        }
       
     }
 
@@ -303,4 +303,15 @@ class Argument {
 		   }
   
   }
+
+  proc tryCast(val:string, type eltType){
+    try {
+      var d = val:eltType;
+    }
+    catch ex : Error {
+      return false;
+    }
+    return true;
+  }
+
 }

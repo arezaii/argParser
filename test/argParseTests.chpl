@@ -70,6 +70,7 @@ proc testIntBadArgumentAlphaNum(test: borrowed Test) throws {
     parser.parseArgs(argList[1..]);
   } catch ex : ArgumentError {
       test.assertTrue(true);
+      return;  
   }
   test.assertTrue(false);
   // test.assertThrows(parser.parseArgs(argList[1..]), ArgumentError);
