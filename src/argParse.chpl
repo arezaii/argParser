@@ -9,61 +9,61 @@ public module ArgParse {
   if chpl_warnUnstable then
     compilerWarning("Argument Parser is unstable: see github.com/chapel-lang/chapel/issue #...");
   
-//enum ArgCounts { oneOrMore = -1, zeroOrMore = -2 } 
 
-class ArgumentError : Error {
-  var msg:string;
-  proc init(msg:string) {
-    this.msg = msg;
+  class ArgumentError : Error {
+    var msg:string;
+    proc init(msg:string) {
+      this.msg = msg;
+    }
+    override proc message() {
+      return msg;
+    }    
   }
-  override proc message() {
-    return msg;
-  }
-}
 
 // indicates a result of argument parsing
-class Argument {
-  var present: bool=false;
-  var values: list(string);
-  var myType: string="string";
-  proc getEltType() {
-    return myType;
+  class Argument {
+    var present: bool=false;
+    var values: list(string);
+    var myType: string="string";
+    proc getEltType() {
+      return myType;
+    }
+    
+    proc getValue(){     
+      //TODO: Why this method doesn't complain about return value
+      //during compilation 
+    }
+    proc getValues(){     
+    }    
+    proc hasValue(){
+      return !this.values.isEmpty();
+    }
   }
-  
-  proc getValue(){
-    //return values.first:eltType;
-  }
-  proc getValues(){
-    // return values:list(eltType);
-  }
-  proc hasValue(){
-    return !this.values.isEmpty();
-  }
-}
 
- class TypedArgument : Argument{
-   type eltType;
-   var myType:string = eltType:string;
+  class TypedArgument : Argument{
+    type eltType;
+    var myType:string = eltType:string;
 
-   override proc getEltType() {
-     return this.eltType:string;
-   }
-   
-   override proc getValue() {
-     var rtn:eltType;
-     try!{
-       rtn = this.values.first():eltType;
-     }
-     return rtn;
-   }
-   override proc getValues() {
-     var rtn = new list(this.eltType);
-     try!{
-       rtn.extend(this.values:list(eltType));
-     }
-     return rtn;
-   }
- }
+    override proc getEltType() {
+      return this.eltType:string;
+    }
+    
+    override proc getValue() {
+      var rtn:eltType;
+      try!{
+        rtn = this.values.first():eltType;
+      }
+      return rtn;
+    }
+    override proc getValues() {
+      var rtn = new list(this.eltType);
+      try!{
+        rtn.extend(this.values:list(eltType));
+      }
+      return rtn;
+    }   
+
+  }
 
 
 /* class ArgumentHandler { */
@@ -83,28 +83,34 @@ class Argument {
 /* } */
 
 
+
+
  
- class Action {
+  class Action {
    var name:string;
    var numOpts:int;
    var opts:[0..numOpts-1] string;
    var required:bool;
-   var help:string;
-   var numDefaults:int;
-   var defaultValue:[0..numDefaults-1] string;
+   var help:string;  
+   var defaultValue:list(string);
    var numArgs:range;
 
-   proc getEltType(){
-
+   proc validate(args:[]string, startPos:int):bool{     
+     return false;
    }
  }
  
- class TypedAction: Action {
+  class TypedAction: Action {
    type eltType;
-   override proc getEltType(){
-     return eltType;
+
+   override proc validate(args:[]string, startPos:int) {
+     //writeln("validate in TypedAction");
+     if this.eltType == string {
+       return true;
+     }
+     return tryCast(args[startPos], this.eltType);
    }
-}
+  }
 
  record argumentParser {
   var result: map(string, shared Argument);
@@ -113,6 +119,9 @@ class Argument {
   var unknownArgs: list(string);
   var missingArgs: list(string);
   
+  // a list of names mapped to Actions which should be ordered
+  var positionals: list(string);
+
   //this is not elegant...probably bug prone....needs rework
   proc consumeArgs(arguments:[?argsD]string, inout pos:int){
     compilerAssert(argsD.rank==1, "consumeArgs requires 1D array");
@@ -132,16 +141,17 @@ class Argument {
       var argAction = actions.getBorrowed(argName);
       var argContainer = this.result.getBorrowed(argName);
       var j = 0;
+      // parse unbounded option lists
       if !argAction.numArgs.hasHighBound() then {
         pos += 1;
         argContainer.values.clear();
         while pos < argsD.high && !arguments[pos].startsWith("-") {
-          if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+          if !argAction.validate(arguments, pos) then { 
              this.unknownArgs.append(arguments[pos]); 
              pos+=1; 
              j+=1; 
              continue; 
-          }
+          } 
           argContainer.values.append(arguments[pos]);
           argContainer.present=true;
           pos += 1;
@@ -156,12 +166,12 @@ class Argument {
           if arguments[pos].startsWith("-") then
             //expected argAction.numArgs but only got j argument values
             this.missingArgs.append(argAction.name);
-          if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+          if !argAction.validate(arguments, pos) then { 
              this.unknownArgs.append(arguments[pos]); 
              pos+=1; 
              j+=1; 
              continue; 
-          }
+          } 
             argContainer.values.append(arguments[pos]);
             argContainer.present=true;
             j += 1;
@@ -176,12 +186,12 @@ class Argument {
       var j = 0;
       writeln("Begin parsing " + argAction.name);
       while j <= argAction.numArgs.low && !arguments[pos].startsWith("-") {
-        if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+        if !argAction.validate(arguments, pos) then { 
              this.unknownArgs.append(arguments[pos]); 
              pos+=1; 
              j+=1; 
              continue; 
-        }
+          } 
         argContainer.values[0]=arguments[pos];
         argContainer.present=true;
         j += 1;
@@ -190,12 +200,12 @@ class Argument {
       if j == argAction.numArgs.low then {
         //check if there are remaining arguments to add, up to numArgs.high, or we hit another flag
         while j <= argAction.numArgs.high && !arguments[pos].startsWith("-") {
-        if argContainer.getEltType().startsWith("int") && !tryCast(arguments[pos], int){ 
+        if !argAction.validate(arguments, pos) then { 
              this.unknownArgs.append(arguments[pos]); 
              pos+=1; 
              j+=1; 
              continue; 
-        }
+          } 
           argContainer.values[0]=arguments[pos];
           argContainer.present=true;
           j += 1;
@@ -219,13 +229,12 @@ class Argument {
           writeln("Unknown Argument found at pos " + pos:string+ " " + arguments[pos]);
           this.unknownArgs.append(arguments[pos]);
           pos +=1;
-        }
-      
+        }      
     }
-
   }
   
-  proc parseArgs(arguments:[]string) throws {
+  proc parseArgs(arguments:[?argsD]string) throws {
+    compilerAssert(argsD.rank==1, "parseArgs requires 1D array");
     var pos = arguments.domain.low;
     this.consumeArgs(arguments, pos);
     if this.unknownArgs.size > 0 then {
@@ -246,12 +255,14 @@ class Argument {
 		               name:string,
                    opts:[] string,
                    numArgs:int = 1,
-                   defaultValue:eltType,
+                   defaultValue: ?T, //play with ?T
                    required:bool = false,
                    help:string = "") throws 
 		   {
-		     return addArgument(eltType, name, opts, numArgs-1..numArgs-1,
+         if T == eltType then {
+		      return addArgument(eltType, name, opts, numArgs-1..numArgs-1,
 					[defaultValue], required, help);
+          }
 		   }
    
    proc addArgument(type eltType,
@@ -262,10 +273,10 @@ class Argument {
                     required:bool = false,
                     help:string="") throws {
      compilerAssert(numArgs.hasLowBound(), "numArgs must have a lower bound");
-     var act = new Action(name=name, numOpts=opts.size,opts= opts,
+     var act = new TypedAction(eltType=eltType,name=name, numOpts=opts.size,opts= opts,
 					numArgs=numArgs, required=required,
-					help=help,
-					numDefaults=defaultValue.size);     
+					help=help);
+     for val in defaultValue do act.defaultValue.append(val:string);      
      return addArgument(act, eltType);   
    }
 
@@ -289,15 +300,15 @@ class Argument {
                    numArgs:int,
                    required=false,
                    help:string="") throws{
-                      var act = new Action(name=name, numOpts=opts.size,
+                      var act = new TypedAction(eltType=eltType, name=name, numOpts=opts.size,
                       opts=opts, numArgs=numArgs-1..numArgs-1, required=required,
-                      help=help);
-                    return addArgument(act, eltType);
-                    }
+                      help=help);                  
+                  return addArgument(act, eltType);
+  }
 
-
+  
   proc addArgument(type eltType,
-		   name:string,
+		               name:string,
                    opts:[] string,
                    numArgs:int = 1,
                    defaultValue:[] eltType,
@@ -305,16 +316,17 @@ class Argument {
                    help:string = "") throws 
 		   {
 		    
-		     var act = new Action(name=name, numOpts=opts.size,
+		     var act = new TypedAction(eltType=eltType,name=name, numOpts=opts.size,
 						     opts= opts, numArgs=numArgs-1..numArgs-1,
-						     required=required,help=help,
-						     
-						     numDefaults=defaultValue.size);		    
+						     required=required,help=help);
+          for val in defaultValue do act.defaultValue.append(val:string); 
 		     return addArgument(act, eltType);
 		   }
   
   }
 
+// helper to make sure we can properly convert the string argument
+// into the data type specified by the developer
   proc tryCast(val:string, type eltType){
     try {
       var d = val:eltType;

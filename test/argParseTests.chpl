@@ -6,13 +6,12 @@ use List;
 proc testSingleIntArg(test: borrowed Test) throws {
   var argList = ["progName","-i","20"];
   var parser = new argumentParser();
-  var defaultVal = 0;
   var myIntArg = parser.addArgument(eltType=int,
 				    name="IntArg1",
 				    opts=["-i","--intVal"],
 				    required=true,
 				    numArgs=1,
-				    defaultValue=defaultVal,
+				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
   //make sure default value was assigned
@@ -23,6 +22,54 @@ proc testSingleIntArg(test: borrowed Test) throws {
   test.assertTrue(myIntArg.hasValue());
   //ensure the value passed is correct, and correct type
   test.assertEqual(myIntArg.getValue(),20);
+}
+
+//test that when a default specified without an argument, the default
+//value is stored
+proc testSingleIntArgDefault(test: borrowed Test) throws {
+  var argList = ["progName"];
+  var parser = new argumentParser();
+  var myIntArg = parser.addArgument(eltType=int,
+				    name="IntArg1",
+				    opts=["-i","--intVal"],
+				    required=false,
+				    numArgs=1,
+				    defaultValue=5,
+				    help="An integer value to pass as argument");
+  
+  //make sure default value was assigned
+  test.assertTrue(myIntArg.hasValue());
+  test.assertEqual(myIntArg.getValue(),5);
+  //parse the options
+  parser.parseArgs(argList[1..]);
+  //make sure we still have a value
+  test.assertTrue(myIntArg.hasValue());
+  //ensure the default value is assigned the proper value after parsing
+  test.assertEqual(myIntArg.getValue(),5);
+}
+
+//test that when a default specified without an argument, the default
+//value is stored
+proc testSingleStringArgDefault(test: borrowed Test) throws {
+  var argList = ["progName"];
+  var parser = new argumentParser();
+  var myIntArg = parser.addArgument(eltType=int,
+				    name="IntArg1",
+				    opts=["-i","--intVal"],
+				    required=false,
+				    numArgs=1,
+				    defaultValue=5,
+				    help="An integer value to pass as argument");
+  
+  //make sure default value was assigned
+  test.assertTrue(myIntArg.hasValue());
+  test.assertEqual(myIntArg.getValue(),5);
+  //parse the options
+  parser.parseArgs(argList[1..]);
+  //make sure we still have a value
+  test.assertTrue(myIntArg.hasValue());
+  //ensure the default value is assigned the proper value after parsing
+  test.assertEqual(myIntArg.getValue(),5);
 }
 
 //test that when an int option is specified multiple times
@@ -37,6 +84,8 @@ proc testIntArgMultipleLastAssigned(test: borrowed Test) throws {
 				    defaultValue=0,
 				    help="An integer value to pass as argument");
   
+
+
   //make sure default value assigned
   test.assertTrue(myIntArg.hasValue());
 
