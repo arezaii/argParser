@@ -3,6 +3,14 @@ name = "argParse"
 version = "0.1.0"
 chplVersion = "1.25.0"
 license = "None"
+tests = ["argParseTests.chpl",
+         "masonArgParseTests.chpl"]
 
 [dependencies]
 
+[examples]
+examples = ["masonArgParseExample.chpl"]
+
+[examples.masonArgParseExample]
+execopts = "arg1 --flagOn subCmd1 subVal1"
+compopts = "-M /home/arezaii/git/chapel/tools/mason -M /home/arezaii/git/chapel/test/mason/mason-argparse"
