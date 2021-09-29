@@ -1,4 +1,4 @@
-use MasonArgParse;
+use ArgumentParser;
 use List;
 
 config var myConfigVar:string;

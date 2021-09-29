@@ -1,5 +1,5 @@
 [brick]
-name = "argParse"
+name = "ArgParse"
 version = "0.1.0"
 chplVersion = "1.25.0"
 license = "None"
@@ -12,5 +12,5 @@ tests = ["argParseTests.chpl",
 examples = ["masonArgParseExample.chpl"]
 
 [examples.masonArgParseExample]
+# TODO: find out if we can support $CHPL_HOME in path, or if we do already
 execopts = "arg1 --flagOn subCmd1 subVal1"
-compopts = "-M /home/arezaii/git/chapel/tools/mason -M /home/arezaii/git/chapel/test/mason/mason-argparse"
